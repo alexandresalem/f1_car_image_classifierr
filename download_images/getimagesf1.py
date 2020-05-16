@@ -1,13 +1,6 @@
-#Ajsutar para pegar fotos da Racing Point
-
-
 from selenium import webdriver
-from bs4 import BeautifulSoup as Soup
-import requests as rq
-from selenium.webdriver.common.keys import Keys
 import os
 import time
-import ast
 import urllib.request as ulib
 
 
@@ -16,7 +9,7 @@ chrome_path = 'chromedriver.exe'
 #list = os.listdir('f1cars')
 list = ['Haas']
 
-search_list = [i.replace(' ','+')+'+Formula1+2019' for i in list]
+
 print(list)
 
 driver = webdriver.Chrome(chrome_path)
