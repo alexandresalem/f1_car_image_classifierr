@@ -60,65 +60,68 @@ def create_folders():
                 os.mkdir(os.path.join(folder,k,k+' - '+team))
 
 
-def download_photos(amount):
+def download_photos(amount,start_year,stop_year):
     with open(json_file, 'r') as file:
         data = file.read()
     loaded_json = json.loads(data)
+
+    path = '/usr/local/bin/chromedriver'
+    # WINDOW_SIZE = "1920,1080"
+    # chrome_options = Options()
+    # chrome_options.add_argument("--headless")
+    # chrome_options.add_argument("--window-size=%s" % WINDOW_SIZE)
+    # chrome_options.add_argument('--no-sandbox')
+    driver = webdriver.Chrome(executable_path=path)
+
     for k in loaded_json.keys():
-        chassis_season = os.listdir(os.path.join('photos',k))
+        if int(k) in range(start_year, stop_year+1):
+            chassis_season = os.listdir(os.path.join('photos',k))
 
-        path = '/usr/local/bin/chromedriver'
-        WINDOW_SIZE = "1920,1080"
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--window-size=%s" % WINDOW_SIZE)
-        chrome_options.add_argument('--no-sandbox')
-        driver = webdriver.Chrome(executable_path=path)
+            for chassis in chassis_season:
+                url = f'https://www.google.com/search?tbm=isch&q={chassis}'
+                driver.get(url)
+                time.sleep(0.5)
+                download_list = []
+                download_list.clear()
 
-        for chassis in chassis_season:
-            url = f'https://www.google.com/search?tbm=isch&q={chassis}'
-            driver.get(url)
-            time.sleep(0.5)
-            download_list = []
-            download_list.clear()
-
-            for el in range(amount):
-                try:
-                    driver.find_element_by_xpath(f'/html/body/div[2]/c-wiz/div[3]/div[1]/div/div/div/div/div[1]/div[1]/div[{el+1}]/a[1]/div[1]/img').click()
-                    time.sleep(0.5)
-                    img = driver.find_element_by_xpath('/html/body/div[2]/c-wiz/div[3]/div[2]/div[3]/div/div/div[3]/div[2]/c-wiz/div[1]/div[1]/div/div[2]/a/img').get_property(
-                        'src')
-                    if img[-3:].lower() in ['jpg','png']:
-                        download_list.append(img)
-                except:
-                    pass
-
-            if len(download_list) == 0:
-                current_folder = os.path.join('photos',k,chassis)
-                current_photos = os.listdir(current_folder)
-                for id, photo in enumerate(current_photos):
-                    old=photo
-                    new=str(id+100)+photo[-4:]
+                for el in range(amount):
                     try:
-                        os.rename(os.path.join(current_folder,old),os.path.join(current_folder,new))
+                        driver.find_element_by_xpath(f'/html/body/div[2]/c-wiz/div[3]/div[1]/div/div/div/div/div[1]/div[1]/div[{el+1}]/a[1]/div[1]/img').click()
+                        time.sleep(0.5)
+                        img = driver.find_element_by_xpath('/html/body/div[2]/c-wiz/div[3]/div[2]/div[3]/div/div/div[3]/div[2]/c-wiz/div[1]/div[1]/div/div[2]/a/img').get_property(
+                            'src')
+                        if img[-3:].lower() in ['jpg','png']:
+                            download_list.append(img)
                     except:
                         pass
 
-                    last_id = id
+                if len(download_list) > 0:
+                    current_folder = os.path.join('photos',k,chassis)
+                    current_photos = os.listdir(current_folder)
+                    last_id = 0
+                    for id, photo in enumerate(current_photos):
+                        old=photo
+                        new=str(id+100)+photo[-4:]
+                        try:
+                            os.rename(os.path.join(current_folder,old),os.path.join(current_folder,new))
+                        except:
+                            pass
 
-                for item, link in enumerate(download_list):
-                    path = os.path.join('photos',k,chassis,str(last_id+item+101)+link[-4:])
+                        last_id = id
 
-                    try:
-                        ulib.urlretrieve(link, path)
-                        print(f'Arquivo {path} salvo!')
-                    except:
-                        print('Failed ULIB')
+                    for item, link in enumerate(download_list):
+                        path = os.path.join('photos',k,chassis,str(last_id+item+101)+link[-4:])
+
+                        try:
+                            ulib.urlretrieve(link, path)
+                            print(f'Arquivo {path} salvo!')
+                        except:
+                            print('Failed ULIB')
 
 
 
 # Checks wether is necessary to run 'list_chassis_per_year' function
-if not os.path.isfile(json_file):
-    list_chassis_per_season()
-create_folders()
-download_photos(100)
+# if not os.path.isfile(json_file):
+#     list_chassis_per_season()
+# create_folders()
+download_photos(100,1982,2020)
