@@ -6,7 +6,7 @@ AlphaTauri
 Alta Car and Engineering Company
 Andrea Moda
 Arrows
-Arzani-Volpini
+Arzani Volpini
 Aston Butterworth
 Aston Martin
 BAR
@@ -82,7 +82,7 @@ Spyker
 Stewart
 Super Aguri
 Surtees
-Tec-Mec
+Tec Mec
 Toleman
 Toro Rosso
 Toyota
