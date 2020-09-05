@@ -15,14 +15,17 @@ from tensorflow.keras.optimizers import *
 # Listing folders
 path = 'download_images/photos'
 json_file = 'download_images/chassis_season.json'
+img_size = 50
+main_folder = 'download_images/photos'
+
 
 def generate_list():
     with open(json_file, 'r') as file:
         data = file.read()
     loaded_json = json.loads(data)
 
-    chassis_list=[]
-    teams_list=[]
+    chassis_list = []
+    teams_list = []
     for chassis_season in loaded_json.values():
         for chassis in chassis_season:
             chassis = re.sub(r"[^a-zA-Z0-9]+", ' ', chassis)
@@ -30,18 +33,18 @@ def generate_list():
                 chassis_list.append(chassis)
             name = []
             for word in chassis.split(' '):
-                if any(map(str.isdigit, word)) == False:
+                if not any(map(str.isdigit, word)):
                     name.append(word)
             if (" ".join(name)) not in teams_list:
                 teams_list.append(" ".join(name))
     teams_list.sort()
     if 'teams.txt' not in os.listdir('.'):
-        with open('teams.txt','w') as file:
+        with open('teams.txt', 'w') as file:
             for team in teams_list:
                 file.write(f'{team}\n')
 
     teams_dict = {}
-    with open('teams.txt','r') as file:
+    with open('teams.txt', 'r') as file:
         teams_list.clear()
         for team in file:
             teams_list.append(team[:-1])
@@ -50,33 +53,34 @@ def generate_list():
         count = 0
         for team in teams_list:
             if team in chassis:
-                teams_dict[chassis]=team
+                teams_dict[chassis] = team
                 count += 1
         if count > 1:
             print(chassis)
     return chassis_list, teams_list, teams_dict
 
-def images_into_array(img_size,main_folder):
 
+def images_into_array(img_size, main_folder):
     # FIRST STEP: TRANSFORM IMAGES INTO ARRAYS
     dataset = []
     for season in os.listdir(main_folder):
         print(season)
         for chassis in os.listdir(os.path.join(main_folder, season)):
-            if teams_dict.get(chassis.split(' - ')[1]) == None:
+            if teams_dict.get(chassis.split(' - ')[1]) is None:
                 print(f'Adjust team name {chassis.split(" - ")[1]}')
             if chassis.split(' - ')[1] not in chassis_list:
                 print(chassis.split(' - ')[1])
 
             for image in os.listdir(os.path.join(main_folder, season,chassis)):
                 try:
-                    img = cv2.imread(os.path.join(os.environ.get('PWD'),main_folder, season, chassis, image))
+                    img = cv2.imread(os.path.join(os.environ.get('PWD'), main_folder, season, chassis, image))
                     img = cv2.resize(img, (img_size, img_size))
                     dataset.append((img, chassis.split(' - ')[1], teams_dict.get(chassis.split(' - ')[1])))
                 except:
                     pass
     random.shuffle(dataset)
     return dataset
+
 
 def full_model():
     # Separate dataset into Feature and Target data
@@ -95,16 +99,16 @@ def full_model():
     y = np.array(y)
     X = X.astype('float32')/255
     y = np_utils.to_categorical(y)
-    model = create_model(X,y)
+    model = create_model(X, y)
 
     #Saving model into json file
-    model_json = model.models.to_json()
-    with open('models/model_f1car.json', 'w') as json_file:
+    model_json = model.to_json()
+    with open('models/model_f1car_full.json', 'w') as json_file:
         json_file.write(model_json)
-    # model.save_weights('models/model_f1car.h5')
+    model.save_weights('models/model_f1car_full.h5')
+
 
 def teams_model():
-
     chassis_per_team = {}
     for team in teams_list:
         team_cars = []
@@ -182,8 +186,6 @@ def create_model(X, y):
 
 
 chassis_list, teams_list, teams_dict = generate_list()
-img_size = 50
-main_folder = 'download_images/photos'
 f1tuple = images_into_array(img_size, main_folder)
 full_model()
-teams_model()
+# teams_model()

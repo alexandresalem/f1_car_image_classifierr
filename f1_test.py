@@ -13,7 +13,7 @@ from keras import backend as K
 from keras.models import Sequential, model_from_json
 import keras
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-
+TEST_PATH = 'test_images/Mclaren.jpeg'
 main_folder = 'f1cars'
 label = os.listdir(main_folder)
 img_size = 256
@@ -33,7 +33,7 @@ print("Loaded model from disk")
 
 
 try:
-    final_image = cv2.imread('TestLotus.jpg')
+    final_image = cv2.imread(TEST_PATH)
     final_image = cv2.resize(final_image, (img_size, img_size))
 except:
     print("Photo wasn't found")

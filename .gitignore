@@ -130,3 +130,6 @@ dmypy.json
 
 
 /download_images/photos
+test_images
+
+.idea

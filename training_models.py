@@ -17,6 +17,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 main_folder = 'download_images/photos'
 img_size = 50
 
+
 def model_all_chassis_all_seasons(img_size):
     dataset = []
     all_teams = []
@@ -24,17 +25,16 @@ def model_all_chassis_all_seasons(img_size):
     for season in os.listdir(main_folder):
         for team in os.listdir(os.path.join(main_folder, season)):
             all_teams.append(team)
-            for image in os.listdir(os.path.join(main_folder, season,team)):
+            for image in os.listdir(os.path.join(main_folder, season, team)):
                 print(os.path.join(main_folder, season, team, image))
                 try:
-                    img = cv2.imread(os.path.join(os.environ.get('PWD'),main_folder, season, team, image))
+                    img = cv2.imread(os.path.join(os.environ.get('PWD'),
+                                                  main_folder, season, team, image))
                     img = cv2.resize(img, (img_size, img_size))
                     dataset.append((img, team))
                 except:
                     pass
                 print(len(dataset))
-
-
     X = []
     y = []
 
@@ -83,7 +83,7 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 # Fit the model
 model.fit(X, y, epochs=epochs, batch_size=32, validation_split=0.1)
 #
-scores = model.evaluate(X,y,verbose=0)
+scores = model.evaluate(X, y, verbose=0)
 print("Accuracy: %.2f%%" % (scores[1]*100))
 #
 # model_json = model.to_json()
