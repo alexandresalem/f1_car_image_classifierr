@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 
-/download_images/photos
+train_images
 test_images
 
 .idea

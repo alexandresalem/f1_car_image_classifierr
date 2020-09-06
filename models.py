@@ -13,16 +13,12 @@ from keras.utils import np_utils
 from tensorflow.keras.optimizers import *
 
 # Listing folders
-path = 'download_images/photos'
-json_file = 'download_images/chassis_season.json'
-img_size = 50
-main_folder = 'download_images/photos'
+from constants import F1_CHASSIS, IMG_SIZE, TRAIN_FOLDER
+from utils import load_json
 
 
 def generate_list():
-    with open(json_file, 'r') as file:
-        data = file.read()
-    loaded_json = json.loads(data)
+    loaded_json = load_json(F1_CHASSIS)
 
     chassis_list = []
     teams_list = []
@@ -71,7 +67,7 @@ def images_into_array(img_size, main_folder):
             if chassis.split(' - ')[1] not in chassis_list:
                 print(chassis.split(' - ')[1])
 
-            for image in os.listdir(os.path.join(main_folder, season,chassis)):
+            for image in os.listdir(os.path.join(main_folder, season, chassis)):
                 try:
                     img = cv2.imread(os.path.join(os.environ.get('PWD'), main_folder, season, chassis, image))
                     img = cv2.resize(img, (img_size, img_size))
@@ -97,11 +93,11 @@ def full_model():
     # Transforming data into numpy arrays (to use them in Tensorflow)
     X = np.array(X)
     y = np.array(y)
-    X = X.astype('float32')/255
+    X = X.astype('float32') / 255
     y = np_utils.to_categorical(y)
     model = create_model(X, y)
 
-    #Saving model into json file
+    # Saving model into json file
     model_json = model.to_json()
     with open('models/model_f1car_full.json', 'w') as json_file:
         json_file.write(model_json)
@@ -140,11 +136,11 @@ def teams_model():
             print(len(y))
             X = np.array(X)
             y = np.array(y)
-            X = X.astype('float32')/255
+            X = X.astype('float32') / 255
             y = np_utils.to_categorical(y)
             if y.shape[1] != 1:
-                model = create_model(X,y)
-                #Saving model into json file
+                model = create_model(X, y)
+                # Saving model into json file
                 model_json = model.models.to_json()
                 with open(f'models/model_f1car_{team}.json', 'w') as json_file:
                     json_file.write(model_json)
@@ -156,7 +152,7 @@ def create_model(X, y):
     # Create the model
 
     model = Sequential()
-    model.add(Conv2D(32, (3, 3), input_shape=(img_size, img_size, 3), padding='same', activation='relu',
+    model.add(Conv2D(32, (3, 3), input_shape=(IMG_SIZE, IMG_SIZE, 3), padding='same', activation='relu',
                      kernel_constraint=maxnorm(3)))
     model.add(Dropout(0.2))
 
@@ -186,6 +182,6 @@ def create_model(X, y):
 
 
 chassis_list, teams_list, teams_dict = generate_list()
-f1tuple = images_into_array(img_size, main_folder)
+f1tuple = images_into_array(IMG_SIZE, TRAIN_FOLDER)
 full_model()
 # teams_model()

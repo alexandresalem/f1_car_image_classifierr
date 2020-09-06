@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 # Just disables the warning, doesn't enable AVX/FMA
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-main_folder = 'download_images/photos'
+main_folder = 'train_images'
 img_size = 50
 
 
