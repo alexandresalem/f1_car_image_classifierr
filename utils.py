@@ -18,9 +18,9 @@ def load_json(file) -> dict:
     return json.loads(data)
 
 
-def save_json(dictionary: dict):
+def save_json(dictionary: dict, filename=F1_CHASSIS):
     json_dict = json.dumps(dictionary)
-    with open(F1_CHASSIS, 'w') as file:
+    with open(os.path.realpath(filename), 'w') as file:
         file.write(json_dict)
 
 
