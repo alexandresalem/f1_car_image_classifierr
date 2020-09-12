@@ -1,19 +1,14 @@
-import json
 import os
 import random
-import re
 
 import cv2
 import numpy as np
+from keras import models
 from keras.constraints import maxnorm
 from keras.layers import *
-from keras import models
 from keras.models import Sequential
-from keras.utils import np_utils
-from tensorflow.keras.optimizers import *
 
-# Listing folders
-from constants import F1_CHASSIS, IMG_SIZE, TRAIN_FOLDER, F1_CHASSIS_INFO, CONSTRUCTOR_MODEL_PATH
+from constants import IMG_SIZE, TRAIN_FOLDER, F1_CHASSIS_INFO, CONSTRUCTOR_MODEL_PATH
 from utils import load_json, save_json
 
 
@@ -70,101 +65,109 @@ from utils import load_json, save_json
 def images_into_array(start_year, end_year, folder=TRAIN_FOLDER):
     # FIRST STEP: TRANSFORM IMAGES INTO ARRAYS
     car_info = load_json(os.path.realpath(F1_CHASSIS_INFO))
-    print(car_info)
     dataset = []
-    results_list = []
+    constructor_list = []
+    chassis_dict = {}
+
+    # Mapping folders and converting images into numpy arrays
     for season in os.listdir(folder):
         if int(season) in range(start_year, end_year + 1):
             print(season)
             for car_folder in os.listdir(os.path.join(folder, season)):
-                if car_info.get(car_folder)[2] not in results_list:
-                    results_list.append(car_info.get(car_folder)[2])
+
+                seasons = car_info.get(car_folder)[0]
+                car_name = car_info.get(car_folder)[1]
+                constructor_name = car_info.get(car_folder)[2]
+
+                if constructor_name not in constructor_list:
+                    constructor_list.append(constructor_name)
+                    chassis_dict[constructor_name] = [car_folder]
+
+                if car_folder not in chassis_dict.get(constructor_name):
+                    chassis_dict[constructor_name].append(car_folder)
                 for image in os.listdir(os.path.join(folder, season, car_folder)):
                     try:
                         image_array = cv2.imread(os.path.join(os.environ.get('PWD'), folder, season, car_folder, image))
                         image_array = cv2.resize(image_array, (IMG_SIZE, IMG_SIZE))
 
                         dataset.append((image_array,
-                                        car_info.get(car_folder)[1],
-                                        car_info.get(car_folder)[2],
-                                        car_info.get(car_folder)[0]))
+                                        car_folder,
+                                        constructor_name,
+                                        seasons))
                     except:
                         pass
     # Shuffle is a good practice when before making your model train with the dataset
     random.shuffle(dataset)
-    return dataset, results_list
+    return dataset, constructor_list, chassis_dict
 
 
-def predict_constructor_model(start_year, end_year):
+def predict_constructor_model(start_year, end_year, building_models):
+    """
+    Creates a model to predict the constructor's name
+    :param building_models: models to be built
+    :param start_year: seasons interval - first year
+    :param end_year: seasons interval - last year
+    :return:
+    """
+
     # Separate dataset into Feature and Target data
+    training_dataset, training_constructor_list, training_chassis_dict = images_into_array(start_year, end_year)
     X = []
     y = []
-    training_dataset, training_result_list = images_into_array(start_year, end_year)
+    X.clear()
+    y.clear()
+    if 'constructor' in building_models:
+        for image_array, chassis, constructor, seasons in training_dataset:
+            try:
+                X.append(image_array)
+                y.append(training_constructor_list.index(constructor))
+            except:
+                pass
 
-    for image_array, chassis, team, seasons in training_dataset:
-        try:
-            X.append(image_array)
-            y.append(training_result_list.index(team))
-        except:
-            pass
+        # Transforming data into numpy arrays (to use them in Tensorflow)
+        X = np.array(X)
+        X = X.astype('float32') / 255
+        y = np.array(y)
 
-    # Transforming data into numpy arrays (to use them in Tensorflow)
-    X = np.array(X)
-    y = np.array(y)
-    X = X.astype('float32') / 255
-    model = create_model(X, y)
+        constructor_model = create_model(X, y)
 
-    # Saving model into json file
-    model_json = model.to_json()
-    with open(f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}.json', 'w') as json_file:
-        json_file.write(model_json)
-    model.save_weights(f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}.h5')
+        # Saving model into json file
+        model_json = constructor_model.to_json()
+        with open(f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}.json', 'w') as json_file:
+            json_file.write(model_json)
+        constructor_model.save_weights(f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}.h5')
 
-    save_json({'results': training_result_list},
-              filename=f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}_result_dict.json')
+        save_json({'results': training_constructor_list},
+                  filename=f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}_constructor_results.json')
 
-#
-# def teams_model():
-#     chassis_per_team = {}
-#     for team in teams_list:
-#         team_cars = []
-#         for k, v in teams_dict.items():
-#             if v == team and k not in team_cars:
-#                 team_cars.append(k)
-#         chassis_per_team[team] = team_cars
-#     json_dict = json.dumps(chassis_per_team)
-#     with open('teams_chassis.json', 'w') as file:
-#         file.write(json_dict)
-#     # Separate dataset into Feature and Target data
-#
-#     for team in teams_list:
-#         X = []
-#         X.clear()
-#         y = []
-#         y.clear()
-#         for image_array, chassis, teams in f1tuple:
-#             if team == teams:
-#                 try:
-#                     X.append(image_array)
-#                     y.append(chassis_per_team.get(team).index(chassis))
-#
-#                 except:
-#                     pass
-#
-#         # Transforming data into numpy arrays (to use them in Tensorflow)
-#         if int(len(y)) > 0:
-#             print(len(y))
-#             X = np.array(X)
-#             y = np.array(y)
-#             X = X.astype('float32') / 255
-#             y = np_utils.to_categorical(y)
-#             if y.shape[1] != 1:
-#                 model = create_model(X, y)
-#                 # Saving model into json file
-#                 model_json = model.models.to_json()
-#                 with open(f'models/model_f1car_{team}.json', 'w') as json_file:
-#                     json_file.write(model_json)
-#                 model.save_weights(f'models/model_f1car_{team}.h5')
+    if 'chassis' in building_models:
+        for training_constructor in training_constructor_list:
+            X = []
+            y = []
+            print(training_constructor)
+            for image_array, chassis, constructor, seasons in training_dataset:
+                if training_constructor == constructor:
+                    try:
+                        X.append(image_array)
+                        y.append(training_chassis_dict.get(training_constructor).index(chassis))
+                    except:
+                        pass
+
+            # Transforming data into numpy arrays (to use them in Tensorflow)
+            X = np.array(X)
+            X = X.astype('float32') / 255
+            y = np.array(y)
+
+            model = create_model(X, y)
+
+            # Saving model into json file
+            model_json = model.to_json()
+            with open(f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}-{training_constructor}.json', 'w') as json_file:
+                json_file.write(model_json)
+            model.save_weights(f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}-{training_constructor}.h5')
+
+            save_json({'results': training_chassis_dict.get(training_constructor)},
+                      filename=f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}-{training_constructor}_chassis_results.json')
 
 
 def create_model(X, y):
@@ -187,7 +190,7 @@ def create_model(X, y):
     model.add(Dropout(0.5))
     model.add(Dense(num_classes, activation='softmax'))
     # Compile model
-    epochs = 50
+    epochs = 1
     lrate = 0.01
     decay = lrate / epochs
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])

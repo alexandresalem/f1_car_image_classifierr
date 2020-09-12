@@ -6,10 +6,11 @@ import urllib.request as ulib
 
 import requests
 from bs4 import BeautifulSoup
+from googleapiclient.discovery import build
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-from constants import WIKIPEDIA, WIKIPEDIA_F1_URL, F1_CHASSIS, TRAIN_FOLDER, PHOTO_AMOUNT
+from constants import WIKIPEDIA, WIKIPEDIA_F1_URL, F1_CHASSIS, TRAIN_FOLDER, PHOTO_AMOUNT, API_KEY, CX
 
 
 def load_json(file) -> dict:
@@ -84,39 +85,19 @@ def create_folders(year: int, cars: list):
             os.mkdir(os.path.join(TRAIN_FOLDER, str(year), car))
 
 
-def download_photos(start_year, end_year):
+def download_photos(start_year, end_year, num_photos):
     chassis = list_chassis_per_season(start_year, end_year)
-
-    path = os.path.realpath('chromedriver')
-    # WINDOW_SIZE = "1920,1080"
-    # chrome_options = Options()
-    # chrome_options.add_argument("--headless")
-    # chrome_options.add_argument("--window-size=%s" % WINDOW_SIZE)
-    # chrome_options.add_argument('--no-sandbox')
-    driver = webdriver.Chrome(executable_path=path)
 
     for season, cars in chassis.items():
         if int(season) in range(start_year, end_year + 1):
             create_folders(season, cars)
             for car in cars:
-                url = f'https://www.google.com/search?tbm=isch&q={car}'
-                driver.get(url)
-                time.sleep(0.5)
                 download_list = []
                 download_list.clear()
-
-                for photo_number in range(PHOTO_AMOUNT):
-                    try:
-                        driver.find_element_by_xpath(
-                            f'/html/body/div[2]/c-wiz/div[3]/div[1]/div/div/div/div/div[1]/div[1]/div[{photo_number + 1}]/a[1]/div[1]/img').click()
-                        time.sleep(0.5)
-                        photo = driver.find_element_by_xpath(
-                            '/html/body/div[2]/c-wiz/div[3]/div[2]/div[3]/div/div/div[3]/div[2]/c-wiz/div[1]/div[1]/div/div[2]/a/img').get_property(
-                            'src')
-                        if photo[-3:].lower() in ['jpg', 'png']:
-                            download_list.append(photo)
-                    except:
-                        pass
+                for i in range(1, num_photos, 10):
+                    results = google_search('Ferrari SF1000', API_KEY, CX, start=i)
+                    for item in results['items']:
+                        download_list.append(item['link'])
 
                 if download_list:
                     car = re.sub(r"[^a-zA-Z0-9]+", ' ', car)
@@ -148,3 +129,9 @@ def download_photos(start_year, end_year):
                         except Exception as e:
                             print(e)
                             print(f"Couldn't save {link}")
+
+
+def google_search(search_term, api_key, cse_id, start, **kwargs):
+    service = build("customsearch", "v1", developerKey=api_key)
+    res = service.cse().list(q=search_term, cx=cse_id, searchType='image', start=start, **kwargs).execute()
+    return res

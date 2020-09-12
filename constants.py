@@ -12,8 +12,10 @@ TRAIN_FOLDER = 'train_images'
 TEST_FOLDER = 'test_images'
 
 TRAIN_PHOTOS_PATH = 'train_images'
-TEST_PHOTO_PATH = 'test_images/Renault.jpg'  # Change it according to your test
 CONSTRUCTOR_MODEL_PATH = 'models/model_constructors'
 
 IMG_SIZE = 50
 PHOTO_AMOUNT = 100
+
+API_KEY = 'AIzaSyA9ew0B0DOYRgJyYLcpmtOuZVExTxqviBQ'
+CX = '144d4138731d5a479'
