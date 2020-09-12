@@ -190,7 +190,7 @@ def create_model(X, y):
     model.add(Dropout(0.5))
     model.add(Dense(num_classes, activation='softmax'))
     # Compile model
-    epochs = 1
+    epochs = 45
     lrate = 0.01
     decay = lrate / epochs
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])

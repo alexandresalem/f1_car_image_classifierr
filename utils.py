@@ -95,7 +95,7 @@ def download_photos(start_year, end_year, num_photos):
                 download_list = []
                 download_list.clear()
                 for i in range(1, num_photos, 10):
-                    results = google_search('Ferrari SF1000', API_KEY, CX, start=i)
+                    results = google_search(f'f1 {car}', API_KEY, CX, start=i)
                     for item in results['items']:
                         download_list.append(item['link'])
 
