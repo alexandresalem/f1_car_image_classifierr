@@ -133,3 +133,5 @@ train_images
 test_images
 
 .idea
+
+constants.py
