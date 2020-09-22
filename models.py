@@ -3,10 +3,9 @@ import random
 
 import cv2
 import numpy as np
-from keras import models
-from keras.constraints import maxnorm
-from keras.layers import *
-from keras.models import Sequential
+from tensorflow.keras.constraints import max_norm
+from tensorflow.keras.models import Sequential
+from tensorflow.python.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
 
 from constants import IMG_SIZE, TRAIN_FOLDER, F1_CHASSIS_INFO, CONSTRUCTOR_MODEL_PATH
 from utils import load_json, save_json
@@ -165,28 +164,28 @@ def predict_constructor_model(start_year, end_year, building_models):
             with open(f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}-{training_constructor}.json', 'w') as json_file:
                 json_file.write(model_json)
             model.save_weights(f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}-{training_constructor}.h5')
-
             save_json({'results': training_chassis_dict.get(training_constructor)},
                       filename=f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}-{training_constructor}_chassis_results.json')
 
 
 def create_model(X, y):
+
     num_classes = len(np.unique(y))
     # Create the model
 
     model = Sequential()
     model.add(Conv2D(32, (3, 3), input_shape=(IMG_SIZE, IMG_SIZE, 3), padding='same', activation='relu',
-                     kernel_constraint=maxnorm(3)))
+                     kernel_constraint=max_norm(3)))
     model.add(Dropout(0.2))
 
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', kernel_constraint=max_norm(3)))
     model.add(MaxPooling2D(pool_size=(2, 2)))
 
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', kernel_constraint=max_norm(3)))
     model.add(MaxPooling2D(pool_size=(2, 2)))
 
     model.add(Flatten())
-    model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
+    model.add(Dense(512, activation='relu', kernel_constraint=max_norm(3)))
     model.add(Dropout(0.5))
     model.add(Dense(num_classes, activation='softmax'))
     # Compile model

@@ -7,6 +7,7 @@ import urllib.request as ulib
 import requests
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
+from pexpect.ANSI import term
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
@@ -87,17 +88,44 @@ def create_folders(year: int, cars: list):
 
 def download_photos(start_year, end_year, num_photos):
     chassis = list_chassis_per_season(start_year, end_year)
-
+    
+    path = os.path.realpath('chromedriver')
+    # WINDOW_SIZE = "1920,1080"
+    # chrome_options = Options()
+    # chrome_options.add_argument("--headless")
+    # chrome_options.add_argument("--window-size=%s" % WINDOW_SIZE)
+    # chrome_options.add_argument('--no-sandbox')
+    driver = webdriver.Chrome(executable_path=path)
+    
     for season, cars in chassis.items():
         if int(season) in range(start_year, end_year + 1):
             create_folders(season, cars)
             for car in cars:
+                url = f'https://www.google.com/search?tbm=isch&q={car} F1'
+                driver.get(url)
+                time.sleep(0.5)
                 download_list = []
                 download_list.clear()
-                for i in range(1, num_photos, 10):
-                    results = google_search(f'f1 {car}', API_KEY, CX, start=i)
-                    for item in results['items']:
-                        download_list.append(item['link'])
+
+                for photo_number in range(num_photos):
+                    try:
+                        driver.find_element_by_xpath(
+                            f'/html/body/div[2]/c-wiz/div[3]/div[1]/div/div/div/div/div[1]/div[1]/div[{photo_number + 1}]/a[1]/div[1]/img').click()
+                        time.sleep(0.5)
+                        photo = driver.find_element_by_xpath(
+                            '/html/body/div[2]/c-wiz/div[3]/div[2]/div[3]/div/div/div[3]/div[2]/c-wiz/div[1]/div[1]/div/div[2]/a/img').get_property(
+                            'src')
+                        if photo[-3:].lower() in ['jpg', 'png']:
+                            download_list.append(photo)
+                    except:
+                        pass
+                
+                # download_list = []
+                # download_list.clear()
+                # for i in range(1, num_photos, 10):
+                #     results = google_search(f'f1 {car}', API_KEY, CX, start=i)
+                #     for item in results['items']:
+                #         download_list.append(item['link'])
 
                 if download_list:
                     car = re.sub(r"[^a-zA-Z0-9]+", ' ', car)
@@ -111,16 +139,19 @@ def download_photos(start_year, end_year, num_photos):
                         os.rename(os.path.join(current_folder, filename),
                                   os.path.join(current_folder, tmp_filename))
 
+                    renamed_files = os.listdir(current_folder)
+                    for number, filename in enumerate(renamed_files):
+
                         _, ext = os.path.splitext(filename)
                         new_filename = f'{str(number + 1000)}{ext}'
-                        os.rename(os.path.join(current_folder, tmp_filename),
+                        os.rename(os.path.join(current_folder, filename),
                                   os.path.join(current_folder, new_filename))
 
                     # Saving new files to the folder
-                    count = len(files)
+                    count = len(renamed_files)
                     for link in download_list:
                         _, ext = os.path.splitext(link)
-                        path = os.path.join(current_folder, f'{count+1}{ext}')
+                        path = os.path.join(current_folder, f'{str(1000+count+1)}{ext}')
 
                         try:
                             ulib.urlretrieve(link, path)
