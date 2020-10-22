@@ -96,7 +96,9 @@ def images_into_array(start_year, end_year, folder=TRAIN_FOLDER):
                     except:
                         pass
     # Shuffle is a good practice when before making your model train with the dataset
+
     random.shuffle(dataset)
+
     return dataset, constructor_list, chassis_dict
 
 
@@ -140,7 +142,9 @@ def predict_constructor_model(start_year, end_year, building_models):
                   filename=f'{CONSTRUCTOR_MODEL_PATH}-{start_year}-{end_year}_constructor_results.json')
 
     if 'chassis' in building_models:
+
         for training_constructor in training_constructor_list:
+
             X = []
             y = []
             print(training_constructor)
@@ -153,6 +157,7 @@ def predict_constructor_model(start_year, end_year, building_models):
                         pass
 
             # Transforming data into numpy arrays (to use them in Tensorflow)
+
             X = np.array(X)
             X = X.astype('float32') / 255
             y = np.array(y)
@@ -169,7 +174,6 @@ def predict_constructor_model(start_year, end_year, building_models):
 
 
 def create_model(X, y):
-
     num_classes = len(np.unique(y))
     # Create the model
 

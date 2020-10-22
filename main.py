@@ -15,7 +15,7 @@ if __name__ == '__main__':
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
     f1guesser(
         download=False,
-        num_photos=200,
+        num_photos=100,
         years=(1990, 2020),
         build_models=['constructor', 'chassis']
     )
